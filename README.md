@@ -76,3 +76,35 @@ ORDER BY ?fernOrderLabel
 LIMIT 180
 ```
 
+Better as graph. TODO: Size of parent nodes, color of parent nodes.
+
+```
+#defaultView:Graph
+SELECT ?parent ?parentLabel ?child ?childLabel ?num
+WHERE {
+  {SELECT ?parent ?child (COUNT(DISTINCT(?grandChild)) AS ?num) WHERE {
+    BIND(wd:Q373615 AS ?ancestor)    # fern
+    ?parent wdt:P105 wd:Q36602 ;     # order
+            wdt:P171* ?ancestor .    # parent class as defined above
+    ?child wdt:P105 wd:Q35409 ;      # family
+           wdt:P171* ?parent .
+    ?grandChild wdt:P105 wd:Q34740 ; # genus
+                wdt:P171* ?child .
+   }
+   GROUP BY ?parent ?child
+  } UNION {
+    SELECT ?parent ?child (COUNT(DISTINCT(?grandChild)) AS ?num) WHERE {
+     BIND(wd:Q373615 AS ?parent)      # fern, second mention, can I once?
+     ?child wdt:P105 wd:Q36602 ;      # order
+            wdt:P171* ?parent .
+     ?grandChild wdt:P105 wd:Q35409 ; # family
+                 wdt:P171* ?child .
+   }
+   GROUP BY ?parent ?child
+  }
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "[AUTO_LANGUAGE],de,el,en,es"
+  }
+}
+```
+
